@@ -78,5 +78,5 @@ What should I pay attention to?
 
 License
 -------
-Hi I2Hrame is licensed under the MIT License, see [LICENSE.txt](https://github.com/MidTerm-CN/ImRender/blob/main/LICENSE.txt) for more information.
+ImRender is licensed under the MIT License, see [LICENSE.txt](https://github.com/MidTerm-CN/ImRender/blob/main/LICENSE.txt) for more information.
 
