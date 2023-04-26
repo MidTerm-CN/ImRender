@@ -1,4 +1,5 @@
 # ImRender
+[中文README在这里](https://github.com/MidTerm-CN/ImRender/blob/main/README.CN.md)
 
 ### The Pitch
 
