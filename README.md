@@ -76,3 +76,7 @@ What should I pay attention to?
 - Do not forget ';'
 - Do not have space character
 
+License
+-------
+Hi I2Hrame is licensed under the MIT License, see [LICENSE.txt](https://github.com/MidTerm-CN/ImRender/blob/main/LICENSE.txt) for more information.
+
