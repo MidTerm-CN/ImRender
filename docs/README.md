@@ -44,7 +44,7 @@ How can I pass the "style" parameter?
 ```c++
 // Do not think too diffcult.
 // Examples:
-ImRender->Text("Test", pos, color, "Horizontal:center;Outline:true");
+ImRender->Text("Test", pos, color, "Horizontal:center;Outline:true;");
 ImRender->Rect(pos, size, color, "Horizontal:center;Outline:true;Thickness:2.f;");
 ImRender->Line(pos1, pos2, color, "Outline:true;Thickness:2.555555;");
 ImRender->Circle(pos, radius, color, "Outline:true;");
