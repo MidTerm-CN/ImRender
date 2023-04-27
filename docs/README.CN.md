@@ -64,7 +64,7 @@ ImRender->Circle(pos, radius, color, "Outline:true;");
 | Horizontal    | ImRenderHorizontalAxisDockType | "left" "right" "center" |
 | Vertical      | ImRenderVerticalAxisDockType   | "top" "bottom" "center" |
 | Outline       | Bool                           | "true" "false"          |
-| SizeScale     | 全体自然数                     |                         |
+| SizeScale     | Float                          | 全体自然数              |
 | Strikethrough | Bool                           | "true" "false"          |
 | Underline     | Bool                           | "true" "false"          |
 | Fill          | Bool                           | "true" "false"          |
