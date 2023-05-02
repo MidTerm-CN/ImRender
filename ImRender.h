@@ -1,11 +1,6 @@
 #pragma once
 #include <unordered_map>
 
-#define IMRENDER_STYLE_VALUE_VERTICALDOCKTYPE ImRenderVerticalAxisDockType vertical = this->GetVerticalAxisDockType()
-#define IMRENDER_STYLE_VALUE_HORIZONTALDOCKTYPE ImRenderHorizontalAxisDockType horizontal = this->GetHorizontalAxisDockType()
-#define IMRENDER_STYLE_VALUE_BOOL(key,defaultValue) bool key = this->GetBool(#key,defaultValue)
-#define IMRENDER_STYLE_VALUE_FLOAT(key,defaultValue) float key = this->GetFloat(#key,defaultValue)
-
 enum class ImRenderVerticalAxisDockType
 {
     Top,
@@ -32,6 +27,12 @@ public:
     float GetFloat(const std::string& key, float defaultValue);
 };
 
+
+#define IMRENDER_STYLE_VALUE_VERTICALDOCKTYPE ImRenderVerticalAxisDockType vertical = this->GetVerticalAxisDockType()
+#define IMRENDER_STYLE_VALUE_HORIZONTALDOCKTYPE ImRenderHorizontalAxisDockType horizontal = this->GetHorizontalAxisDockType()
+#define IMRENDER_STYLE_VALUE_BOOL(key,defaultValue) bool key = this->GetBool(#key,defaultValue)
+#define IMRENDER_STYLE_VALUE_FLOAT(key,defaultValue) float key = this->GetFloat(#key,defaultValue)
+
 struct ImRenderTextStyle : public ImRenderStyleBase
 {
 	ImRenderTextStyle(const std::string& style) : ImRenderStyleBase(style) {}
@@ -40,7 +41,7 @@ struct ImRenderTextStyle : public ImRenderStyleBase
     IMRENDER_STYLE_VALUE_BOOL(outline, false);
 	IMRENDER_STYLE_VALUE_BOOL(strikethrough, false);
 	IMRENDER_STYLE_VALUE_BOOL(underline, false);
-	IMRENDER_STYLE_VALUE_FLOAT(sizeScale, 1.f);
+	IMRENDER_STYLE_VALUE_FLOAT(sizeScale, 0.f);
 };
 
 struct ImRenderRectStyle : public ImRenderStyleBase
@@ -69,18 +70,13 @@ struct ImRenderCircleStyle : public ImRenderStyleBase
 	IMRENDER_STYLE_VALUE_FLOAT(thickness, 1.f);
 };
 
-class CImRender
+namespace ImRender
 {
-private:
-    ImDrawList* m_pDrawList;
-public:
     ImVec2 Text(std::string text, ImVec2 pos, ImVec4 color, const std::string& style);
     void Rect(ImVec2 pos, ImVec2 size, ImVec4 color, const std::string& style);
     void Line(ImVec2 pos1, ImVec2 pos2, ImVec4 color, const std::string& style);
     void Circle(ImVec2 pos, float radius, ImVec4 color, const std::string& style);
 };
-
-inline CImRender* ImRender = new CImRender();
 
 #undef IMRENDER_STYLE_VALUE_VERTICALDOCKTYPE
 #undef IMRENDER_STYLE_VALUE_HORIZONTALDOCKTYPE
@@ -156,18 +152,17 @@ inline float ImRenderStyleBase::GetFloat(const std::string& key, float defaultVa
 	return defaultValue;
 }
 
-inline ImVec2 CImRender::Text(std::string text, ImVec2 pos, ImVec4 color, const std::string& style)
+inline ImVec2 ImRender::Text(std::string text, ImVec2 pos, ImVec4 color, const std::string& style)
 {
 	static std::unordered_map<std::string, ImRenderTextStyle*> m_styleBaseMap;
 	ImRenderTextStyle* textStyle = nullptr;
-	m_pDrawList = ImGui::GetBackgroundDrawList();
 	if (m_styleBaseMap.find(style) != m_styleBaseMap.end())
 		textStyle = m_styleBaseMap[style];
 	else
 		m_styleBaseMap[style] = textStyle = new ImRenderTextStyle(style);
 	ImGuiContext& g = *GImGui;
-	const float font_size = g.FontSize * textStyle->sizeScale;
-	ImFont* font = g.Font;
+	ImFont* font = ImGui::GetFont();
+	const float font_size = (g.FontSize * textStyle->sizeScale) == 0 ? font->FontSize : g.FontSize * textStyle->sizeScale;
 	ImVec2 textSize = font->CalcTextSizeA(font_size, FLT_MAX, -1.f, text.c_str(), ImGui::FindRenderedTextEnd(text.c_str(), 0), NULL);  textSize.x = IM_FLOOR(textSize.x + 0.99999f);
 	ImVec2 renderPos = pos;
 	if (textStyle->vertical == ImRenderVerticalAxisDockType::Top)
@@ -180,24 +175,23 @@ inline ImVec2 CImRender::Text(std::string text, ImVec2 pos, ImVec4 color, const 
 		renderPos.x -= textSize.x / 2;
 	if (textStyle->outline)
 	{
-		m_pDrawList->AddText(font, font_size, ImVec2(renderPos.x - 1, renderPos.y - 1), IM_COL32_BLACK, text.c_str());
-		m_pDrawList->AddText(font, font_size, ImVec2(renderPos.x + 1, renderPos.y - 1), IM_COL32_BLACK, text.c_str());
-		m_pDrawList->AddText(font, font_size, ImVec2(renderPos.x - 1, renderPos.y + 1), IM_COL32_BLACK, text.c_str());
-		m_pDrawList->AddText(font, font_size, ImVec2(renderPos.x + 1, renderPos.y + 1), IM_COL32_BLACK, text.c_str());
+		ImGui::GetBackgroundDrawList()->AddText(font, font_size, ImVec2(renderPos.x - 1, renderPos.y - 1), IM_COL32_BLACK, text.c_str());
+		ImGui::GetBackgroundDrawList()->AddText(font, font_size, ImVec2(renderPos.x + 1, renderPos.y - 1), IM_COL32_BLACK, text.c_str());
+		ImGui::GetBackgroundDrawList()->AddText(font, font_size, ImVec2(renderPos.x - 1, renderPos.y + 1), IM_COL32_BLACK, text.c_str());
+		ImGui::GetBackgroundDrawList()->AddText(font, font_size, ImVec2(renderPos.x + 1, renderPos.y + 1), IM_COL32_BLACK, text.c_str());
 	}
-	m_pDrawList->AddText(font, font_size, renderPos, ImGui::GetColorU32(color), text.c_str());
+	ImGui::GetBackgroundDrawList()->AddText(font, font_size, renderPos, ImGui::GetColorU32(color), text.c_str());
 	if (textStyle->strikethrough)
-		m_pDrawList->AddLine(ImVec2(renderPos.x, renderPos.y + textSize.y / 2), ImVec2(renderPos.x + textSize.x, renderPos.y + textSize.y / 2), IM_COL32_BLACK, 1.0f);
+		ImGui::GetBackgroundDrawList()->AddLine(ImVec2(renderPos.x, renderPos.y + textSize.y / 2), ImVec2(renderPos.x + textSize.x, renderPos.y + textSize.y / 2), IM_COL32_BLACK, 1.0f);
 	if (textStyle->underline)
-		m_pDrawList->AddLine(ImVec2(renderPos.x, renderPos.y + textSize.y), ImVec2(renderPos.x + textSize.x, renderPos.y + textSize.y), IM_COL32_BLACK, 1.0f);
+		ImGui::GetBackgroundDrawList()->AddLine(ImVec2(renderPos.x, renderPos.y + textSize.y), ImVec2(renderPos.x + textSize.x, renderPos.y + textSize.y), IM_COL32_BLACK, 1.0f);
 	return textSize;
 }
 
-inline void CImRender::Rect(ImVec2 pos, ImVec2 size, ImVec4 color, const std::string& style)
+inline void ImRender::Rect(ImVec2 pos, ImVec2 size, ImVec4 color, const std::string& style)
 {
 	static std::unordered_map<std::string, ImRenderRectStyle*> m_styleBaseMap;
 	ImRenderRectStyle* retctStyle = nullptr;
-	m_pDrawList = ImGui::GetBackgroundDrawList();
 	if (m_styleBaseMap.find(style) != m_styleBaseMap.end())
 		retctStyle = m_styleBaseMap[style];
 	else
@@ -214,39 +208,37 @@ inline void CImRender::Rect(ImVec2 pos, ImVec2 size, ImVec4 color, const std::st
 	if (retctStyle->fill)
 	{
 		if (retctStyle->outline)
-			m_pDrawList->AddRectFilled(ImVec2(renderPos.x - 1.f, renderPos.y - 1.f), ImVec2(renderPos.x + size.x + 1.f, renderPos.y + size.y + 1.f), IM_COL32_BLACK, retctStyle->rounding);
-		m_pDrawList->AddRectFilled(renderPos, ImVec2(renderPos.x + size.x, renderPos.y + size.y), ImGui::GetColorU32(color), retctStyle->rounding);
+			ImGui::GetBackgroundDrawList()->AddRectFilled(ImVec2(renderPos.x - 1.f, renderPos.y - 1.f), ImVec2(renderPos.x + size.x + 1.f, renderPos.y + size.y + 1.f), IM_COL32_BLACK, retctStyle->rounding);
+		ImGui::GetBackgroundDrawList()->AddRectFilled(renderPos, ImVec2(renderPos.x + size.x, renderPos.y + size.y), ImGui::GetColorU32(color), retctStyle->rounding);
 	}
 	else
 	{
 		if (retctStyle->outline)
 		{
-			m_pDrawList->AddRect(ImVec2(renderPos.x - 1.f, renderPos.y - 1.f), ImVec2(renderPos.x + size.x + 1.f, renderPos.y + size.y + 1.f), IM_COL32_BLACK, retctStyle->rounding, ImDrawCornerFlags_All, retctStyle->thickness);
-			m_pDrawList->AddRect(ImVec2(renderPos.x + 1.f, renderPos.y + 1.f), ImVec2(renderPos.x + size.x - 1.f, renderPos.y + size.y - 1.f), IM_COL32_BLACK, retctStyle->rounding, ImDrawCornerFlags_All, retctStyle->thickness);
+			ImGui::GetBackgroundDrawList()->AddRect(ImVec2(renderPos.x - 1.f, renderPos.y - 1.f), ImVec2(renderPos.x + size.x + 1.f, renderPos.y + size.y + 1.f), IM_COL32_BLACK, retctStyle->rounding, ImDrawCornerFlags_All, retctStyle->thickness);
+			ImGui::GetBackgroundDrawList()->AddRect(ImVec2(renderPos.x + 1.f, renderPos.y + 1.f), ImVec2(renderPos.x + size.x - 1.f, renderPos.y + size.y - 1.f), IM_COL32_BLACK, retctStyle->rounding, ImDrawCornerFlags_All, retctStyle->thickness);
 		}
-		m_pDrawList->AddRect(renderPos, ImVec2(renderPos.x + size.x, renderPos.y + size.y), ImGui::GetColorU32(color), retctStyle->rounding, 0, retctStyle->thickness);
+		ImGui::GetBackgroundDrawList()->AddRect(renderPos, ImVec2(renderPos.x + size.x, renderPos.y + size.y), ImGui::GetColorU32(color), retctStyle->rounding, 0, retctStyle->thickness);
 	}
 }
 
-inline void CImRender::Line(ImVec2 pos1, ImVec2 pos2, ImVec4 color, const std::string& style)
+inline void ImRender::Line(ImVec2 pos1, ImVec2 pos2, ImVec4 color, const std::string& style)
 {
 	static std::unordered_map<std::string, ImRenderLineStyle*> m_styleBaseMap;
 	ImRenderLineStyle* lineStyle = nullptr;
-	m_pDrawList = ImGui::GetBackgroundDrawList();
 	if (m_styleBaseMap.find(style) != m_styleBaseMap.end())
 		lineStyle = m_styleBaseMap[style];
 	else
 		m_styleBaseMap[style] = lineStyle = new ImRenderLineStyle(style);
 	if (lineStyle->outline)
-		m_pDrawList->AddLine(pos1, pos2, IM_COL32_BLACK, lineStyle->thickness + 2);
-	m_pDrawList->AddLine(pos1, pos2, ImGui::GetColorU32(color), lineStyle->thickness);
+		ImGui::GetBackgroundDrawList()->AddLine(pos1, pos2, IM_COL32_BLACK, lineStyle->thickness + 2);
+	ImGui::GetBackgroundDrawList()->AddLine(pos1, pos2, ImGui::GetColorU32(color), lineStyle->thickness);
 }
 
-inline void CImRender::Circle(ImVec2 pos, float radius, ImVec4 color, const std::string& style)
+inline void ImRender::Circle(ImVec2 pos, float radius, ImVec4 color, const std::string& style)
 {
 	static std::unordered_map<std::string, ImRenderCircleStyle*> m_styleBaseMap;
 	ImRenderCircleStyle* circleStyle = nullptr;
-	m_pDrawList = ImGui::GetBackgroundDrawList();
 	if (m_styleBaseMap.find(style) != m_styleBaseMap.end())
 		circleStyle = m_styleBaseMap[style];
 	else
@@ -254,16 +246,16 @@ inline void CImRender::Circle(ImVec2 pos, float radius, ImVec4 color, const std:
 	if (circleStyle->fill)
 	{
 		if (circleStyle->outline)
-			m_pDrawList->AddCircleFilled(ImVec2(pos.x, pos.y), radius + 1.f, IM_COL32_BLACK);
-		m_pDrawList->AddCircleFilled(pos, radius, ImGui::GetColorU32(color));
+			ImGui::GetBackgroundDrawList()->AddCircleFilled(ImVec2(pos.x, pos.y), radius + 1.f, IM_COL32_BLACK);
+		ImGui::GetBackgroundDrawList()->AddCircleFilled(pos, radius, ImGui::GetColorU32(color));
 	}
 	else
 	{
 		if (circleStyle->outline)
 		{
-			m_pDrawList->AddCircle(ImVec2(pos.x, pos.y), radius + 1.f, IM_COL32_BLACK, 0, circleStyle->thickness);
-			m_pDrawList->AddCircle(ImVec2(pos.x, pos.y), radius - 1.f, IM_COL32_BLACK, 0, circleStyle->thickness);
+			ImGui::GetBackgroundDrawList()->AddCircle(ImVec2(pos.x, pos.y), radius + 1.f, IM_COL32_BLACK, 0, circleStyle->thickness);
+			ImGui::GetBackgroundDrawList()->AddCircle(ImVec2(pos.x, pos.y), radius - 1.f, IM_COL32_BLACK, 0, circleStyle->thickness);
 		}
-		m_pDrawList->AddCircle(pos, radius, ImGui::GetColorU32(color), 0, circleStyle->thickness);
+		ImGui::GetBackgroundDrawList()->AddCircle(pos, radius, ImGui::GetColorU32(color), 0, circleStyle->thickness);
 	}
 }
